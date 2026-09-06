@@ -1,1 +1,1 @@
-alert("Your Other Girl JavaScript works! 💗");
+alert("Your Other Girl JavaScript works! 💗") 
