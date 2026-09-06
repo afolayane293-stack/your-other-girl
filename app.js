@@ -1,5 +1,5 @@
 // YOUR OTHER GIRL 💗
-// Clean front-end version
+// Frontend — navigation + customization + chat prototype
 
 const state = JSON.parse(localStorage.getItem("yog_state") || "{}");
 
@@ -15,36 +15,36 @@ function $$(selector) {
   return Array.from(document.querySelectorAll(selector));
 }
 
-// ---------- NAVIGATION ----------
+// =========================
+// NAVIGATION
+// =========================
 
 function go(id) {
-  const screen = document.getElementById(id);
+  const target = document.getElementById(id);
 
-  if (!screen) {
-    console.error("Screen not found:", id);
-    return;
-  }
+  if (!target) return;
 
-  $$(".screen").forEach(section => {
-    section.classList.remove("active");
+  $$(".screen").forEach(screen => {
+    screen.classList.remove("active");
   });
 
-  screen.classList.add("active");
+  target.classList.add("active");
 
   if (id === "home") renderHome();
   if (id === "profile") renderProfile();
   if (id === "customize") renderCustomize();
 }
 
-// ---------- WELCOME / NAV BUTTONS ----------
-
+// Attach navigation
 $$("[data-go]").forEach(button => {
-  button.addEventListener("click", function () {
-    go(this.dataset.go);
+  button.addEventListener("click", () => {
+    go(button.dataset.go);
   });
 });
 
-// ---------- CUSTOMIZE ----------
+// =========================
+// MAKE HER YOURS 🎀
+// =========================
 
 const vibes = [
   "🎀 Girly Girl",
@@ -59,7 +59,7 @@ const vibes = [
   "✨ Custom"
 ];
 
-const styles = [
+const talkingStyles = [
   "💗 Sweet & gentle",
   "🎯 Straightforward",
   "😂 Funny",
@@ -82,53 +82,53 @@ const studyModes = [
   "🧠 Challenge Me"
 ];
 
-function renderChoices(id, items, key, multiple = false) {
-  const box = $(id);
+function renderChoices(selector, items, key, multiple = false) {
+  const container = $(selector);
 
-  if (!box) return;
+  if (!container) return;
 
-  box.innerHTML = "";
+  container.innerHTML = "";
+
+  const selectedValues = Array.isArray(state[key])
+    ? state[key]
+    : [];
 
   items.forEach(item => {
     const button = document.createElement("button");
 
+    button.type = "button";
     button.textContent = item;
 
-    const selected = Array.isArray(state[key])
-      ? state[key].includes(item)
-      : false;
-
-    if (selected) {
+    if (selectedValues.includes(item)) {
       button.classList.add("selected");
     }
 
-    button.addEventListener("click", function () {
-      if (!Array.isArray(state[key])) {
-        state[key] = [];
-      }
+    button.addEventListener("click", () => {
 
       if (multiple) {
-        if (state[key].includes(item)) {
-          state[key] = state[key].filter(x => x !== item);
+        if (selectedValues.includes(item)) {
+          state[key] = selectedValues.filter(value => value !== item);
         } else {
-          state[key].push(item);
+          state[key] = [...selectedValues, item];
         }
       } else {
         state[key] = [item];
       }
 
       saveState();
-      renderChoices(id, items, key, multiple);
+
+      // Re-render immediately so the selected option visibly changes
+      renderChoices(selector, items, key, multiple);
     });
 
-    box.appendChild(button);
+    container.appendChild(button);
   });
 }
 
 function renderCustomize() {
   renderChoices("#vibes", vibes, "vibes", true);
-  renderChoices("#styles", styles, "style");
-  renderChoices("#emoji", emojiLevels, "emoji");
+  renderChoices("#styles", talkingStyles, "style", false);
+  renderChoices("#emoji", emojiLevels, "emoji", false);
 
   if ($("#girlName")) {
     $("#girlName").value = state.name || "";
@@ -139,22 +139,24 @@ function renderCustomize() {
   }
 }
 
-renderCustomize();
-
-// SAVE PROFILE
-
+// Save customization
 if ($("#saveProfile")) {
-  $("#saveProfile").addEventListener("click", function () {
+  $("#saveProfile").addEventListener("click", () => {
+
     state.name = $("#girlName").value.trim();
     state.custom = $("#custom").value.trim();
 
     saveState();
 
+    alert("Your girl has been saved! 💗");
+
     go("home");
   });
 }
 
-// ---------- HOME ----------
+// =========================
+// HOME
+// =========================
 
 function renderHome() {
   const hour = new Date().getHours();
@@ -184,29 +186,32 @@ function renderHome() {
 }
 
 function renderPlans() {
-  const plans = $("#plans");
+  const container = $("#plans");
 
-  if (!plans) return;
+  if (!container) return;
 
-  const items = state.plans || [];
+  const plans = state.plans || [];
 
-  if (items.length === 0) {
-    plans.innerHTML = "<p>No plans yet.</p>";
+  if (!plans.length) {
+    container.innerHTML = "<p>No plans yet.</p>";
     return;
   }
 
-  plans.innerHTML = "";
+  container.innerHTML = "";
 
-  items.forEach(item => {
+  plans.forEach(plan => {
     const p = document.createElement("p");
-    p.textContent = "☐ " + item;
-    plans.appendChild(p);
+    p.textContent = "☐ " + plan;
+    container.appendChild(p);
   });
 }
 
+// =========================
 // MOODS
+// =========================
 
 if ($("#moods")) {
+
   const moods = [
     ["😊", "Great"],
     ["🙂", "Okay"],
@@ -217,13 +222,15 @@ if ($("#moods")) {
 
   $("#moods").innerHTML = "";
 
-  moods.forEach(([emoji, name]) => {
+  moods.forEach(([emoji, mood]) => {
+
     const button = document.createElement("button");
 
+    button.type = "button";
     button.textContent = emoji;
 
-    button.addEventListener("click", function () {
-      state.mood = name;
+    button.addEventListener("click", () => {
+      state.mood = mood;
       saveState();
       renderHome();
     });
@@ -232,10 +239,14 @@ if ($("#moods")) {
   });
 }
 
+// =========================
 // ADD PLAN
+// =========================
 
 if ($("#addPlan")) {
-  $("#addPlan").addEventListener("click", function () {
+
+  $("#addPlan").addEventListener("click", () => {
+
     const plan = prompt("What do you want to add to your day?");
 
     if (!plan || !plan.trim()) return;
@@ -251,24 +262,12 @@ if ($("#addPlan")) {
   });
 }
 
-// ---------- PROFILE ----------
-
-function renderProfile() {
-  if ($("#profileName")) {
-    $("#profileName").textContent =
-      state.name || "Your Other Girl";
-  }
-
-  if ($("#profileVibe")) {
-    $("#profileVibe").textContent =
-      (state.vibes || []).join(" • ") ||
-      "Your pocket girl is here.";
-  }
-}
-
-// ---------- CHAT ----------
+// =========================
+// CHAT
+// =========================
 
 function addMessage(type, text) {
+
   const messages = $("#messages");
 
   if (!messages) return;
@@ -279,10 +278,12 @@ function addMessage(type, text) {
   message.textContent = text;
 
   messages.appendChild(message);
+
   messages.scrollTop = messages.scrollHeight;
 }
 
 function sendMessage() {
+
   const input = $("#message");
 
   if (!input) return;
@@ -295,11 +296,13 @@ function sendMessage() {
 
   input.value = "";
 
-  setTimeout(function () {
+  setTimeout(() => {
+
     addMessage(
       "girl",
       "I'm here, girl 💗 Tell me more. Do you want me to just listen, help you understand, or help you figure out what to do?"
     );
+
   }, 400);
 }
 
@@ -308,78 +311,82 @@ if ($("#send")) {
 }
 
 if ($("#message")) {
-  $("#message").addEventListener("keydown", function (event) {
+
+  $("#message").addEventListener("keydown", event => {
+
     if (event.key === "Enter") {
       event.preventDefault();
       sendMessage();
     }
+
   });
 }
 
 $$("[data-starter]").forEach(button => {
-  button.addEventListener("click", function () {
+
+  button.addEventListener("click", () => {
+
     if ($("#message")) {
-      $("#message").value = this.dataset.starter;
+      $("#message").value = button.dataset.starter;
       sendMessage();
     }
+
   });
+
 });
 
-// ---------- STUDY ----------
+// =========================
+// STUDY
+// =========================
 
 $$("[data-study]").forEach(button => {
-  button.addEventListener("click", function () {
+
+  button.addEventListener("click", () => {
+
     const box = $("#studyBox");
 
     if (!box) return;
 
     box.classList.remove("hidden");
 
-    box.innerHTML = "";
+    box.innerHTML = `
+      <h3>${button.dataset.study} 💗</h3>
+      <p>Tell me the subject, topic and what you need help with.</p>
+      <textarea id="studyText" placeholder="Type here..."></textarea>
+      <button class="primary" id="askStudy">Ask my pocket girl →</button>
+    `;
 
-    const title = document.createElement("h3");
-    title.textContent = this.dataset.study + " 💗";
+    $("#askStudy").addEventListener("click", () => {
 
-    const text = document.createElement("p");
-    text.textContent =
-      "Tell me the subject, topic and what you need help with.";
+      const text = $("#studyText").value.trim();
 
-    const input = document.createElement("textarea");
-    input.id = "studyText";
-    input.placeholder = "Type here...";
-
-    const ask = document.createElement("button");
-    ask.className = "primary";
-    ask.textContent = "Ask my pocket girl →";
-
-    ask.addEventListener("click", function () {
-      const request = input.value.trim();
-
-      if (!request) {
-        box.innerHTML =
-          "<h3>Tell me a little more 💗</h3><p>Type the subject and topic you need help with.</p>";
+      if (!text) {
+        box.innerHTML +=
+          "<p>Please type what you want help with. 📚</p>";
         return;
       }
 
-      box.innerHTML =
-        "<h3>Study help 💗</h3>" +
-        "<p>Let's work through <b>" +
-        escapeHTML(request) +
-        "</b> step by step. 📚</p>";
+      box.innerHTML = `
+        <h3>Study help 💗</h3>
+        <p>
+          I got you! 📚 You asked about:
+          <b>${escapeHTML(text)}</b>
+        </p>
+        <p>
+          The real AI study engine will be connected in the backend next.
+        </p>
+      `;
     });
 
-    box.appendChild(title);
-    box.appendChild(text);
-    box.appendChild(input);
-    box.appendChild(ask);
   });
+
 });
 
-// STUDY MODES
+renderChoices("#modes", studyModes, "studyMode", false);
 
-renderChoices("#modes", studyModes, "studyMode");
-
-// ---------- TOOLS ----------
+// =========================
+// TOOLS
+// =========================
 
 const toolNames = {
   journal: "📔 Journal",
@@ -391,163 +398,211 @@ const toolNames = {
 };
 
 $$("[data-tool]").forEach(button => {
-  button.addEventListener("click", function () {
-    openTool(this.dataset.tool);
+
+  button.addEventListener("click", () => {
+
+    const box = $("#toolBox");
+
+    if (!box) return;
+
+    const tool = button.dataset.tool;
+
+    box.classList.remove("hidden");
+
+    box.innerHTML = `
+      <h3>${toolNames[tool]}</h3>
+      <textarea id="toolText" placeholder="Write here..."></textarea>
+      <button class="primary" id="saveToolButton">Save</button>
+    `;
+
+    $("#toolText").value =
+      (state.tools && state.tools[tool]) || "";
+
+    $("#saveToolButton").addEventListener("click", () => {
+
+      if (!state.tools) {
+        state.tools = {};
+      }
+
+      state.tools[tool] = $("#toolText").value;
+
+      saveState();
+
+      alert("Saved on this device 💗");
+    });
+
   });
+
 });
 
-function openTool(tool) {
-  const box = $("#toolBox");
-
-  if (!box) return;
-
-  box.classList.remove("hidden");
-
-  box.innerHTML = "";
-
-  const title = document.createElement("h3");
-  title.textContent = toolNames[tool] || "✨ Tool";
-
-  const textarea = document.createElement("textarea");
-  textarea.id = "toolText";
-  textarea.placeholder = "Write here...";
-
-  if (state.tools && state.tools[tool]) {
-    textarea.value = state.tools[tool];
-  }
-
-  const saveButton = document.createElement("button");
-  saveButton.className = "primary";
-  saveButton.textContent = "Save";
-
-  saveButton.addEventListener("click", function () {
-    if (!state.tools) {
-      state.tools = {};
-    }
-
-    state.tools[tool] = textarea.value;
-
-    saveState();
-
-    alert("Saved on this device 💗");
-  });
-
-  box.appendChild(title);
-  box.appendChild(textarea);
-  box.appendChild(saveButton);
-}
-
-// ---------- PROBLEMS ----------
+// =========================
+// PROBLEMS
+// =========================
 
 $$("[data-problem]").forEach(button => {
-  button.addEventListener("click", function () {
+
+  button.addEventListener("click", () => {
+
     const box = $("#problemBox");
 
     if (!box) return;
 
-    box.innerHTML = "";
+    box.innerHTML = `
+      <div class="card">
+        <b>${button.dataset.problem}</b>
+        <p>
+          I'm listening. 💗 Do you want me to just listen,
+          help you understand, or help you think through
+          what to do?
+        </p>
+        <button id="problemTalk">Talk to me →</button>
+      </div>
+    `;
 
-    const card = document.createElement("div");
-    card.className = "card";
-
-    const title = document.createElement("b");
-    title.textContent = this.dataset.problem;
-
-    const text = document.createElement("p");
-    text.textContent =
-      "I'm listening. 💗 Do you want me to just listen, help you understand, or help you think through what to do?";
-
-    const talk = document.createElement("button");
-    talk.textContent = "Talk to me →";
-
-    talk.addEventListener("click", function () {
+    $("#problemTalk").addEventListener("click", () => {
       go("chat");
     });
 
-    card.appendChild(title);
-    card.appendChild(text);
-    card.appendChild(talk);
-
-    box.appendChild(card);
   });
+
 });
 
-// ---------- MODALS ----------
+// =========================
+// PROFILE
+// =========================
 
-function showModal(content) {
+function renderProfile() {
+
+  if ($("#profileName")) {
+    $("#profileName").textContent =
+      state.name || "Your Other Girl";
+  }
+
+  if ($("#profileVibe")) {
+
+    const selectedVibes = state.vibes || [];
+
+    $("#profileVibe").textContent =
+      selectedVibes.length
+        ? selectedVibes.join(" • ")
+        : "Your pocket girl is here.";
+  }
+}
+
+// =========================
+// MODALS
+// =========================
+
+function showModal(html) {
+
   const modal = $("#modal");
 
   if (!modal) return;
 
   modal.classList.remove("hidden");
 
-  modal.innerHTML =
-    '<div class="modalbox">' +
-    content +
-    "</div>";
+  modal.innerHTML = `
+    <div class="modalbox">
+      ${html}
+    </div>
+  `;
 }
 
 function closeModal() {
+
   if ($("#modal")) {
     $("#modal").classList.add("hidden");
   }
 }
 
 function clearSavedData() {
+
   localStorage.removeItem("yog_state");
+
   location.reload();
-}
-
-if ($("#privacy")) {
-  $("#privacy").addEventListener("click", function () {
-    showModal(
-      "<h2>🔒 Private Girl Mode</h2>" +
-      "<p>Your Other Girl should keep personal content private. This prototype stores your notes locally on this device.</p>" +
-      "<button onclick='closeModal()'>Close</button>"
-    );
-  });
-}
-
-if ($("#memory")) {
-  $("#memory").addEventListener("click", function () {
-    showModal(
-      "<h2>🧠 What does she remember?</h2>" +
-      "<p>This prototype remembers your selected preferences and notes on this device.</p>" +
-      "<button onclick='clearSavedData()'>Delete my saved data</button> " +
-      "<button onclick='closeModal()'>Close</button>"
-    );
-  });
-}
-
-if ($("#premium")) {
-  $("#premium").addEventListener("click", function () {
-    showModal(
-      "<h2>💎 Premium</h2>" +
-      "<p><b>No advertisements at all.</b></p>" +
-      "<p>Advanced features can be optional. Your core Your Other Girl experience does not need Premium.</p>" +
-      "<button onclick='closeModal()'>Close</button>"
-    );
-  });
-}
-
-if ($("#about")) {
-  $("#about").addEventListener("click", function () {
-    showModal(
-      "<h2>Your Other Girl 💗</h2>" +
-      "<p>I'm your pocket girl — here to help you talk, study, organise and work through everyday problems.</p>" +
-      "<button onclick='closeModal()'>Close</button>"
-    );
-  });
 }
 
 window.closeModal = closeModal;
 window.clearSavedData = clearSavedData;
 
-// ---------- HELPERS ----------
+if ($("#privacy")) {
+
+  $("#privacy").addEventListener("click", () => {
+
+    showModal(`
+      <h2>🔒 Private Girl Mode</h2>
+      <p>
+        Your Other Girl should keep personal content private.
+        This prototype stores your information locally on this device.
+      </p>
+      <button onclick="closeModal()">Close</button>
+    `);
+
+  });
+
+}
+
+if ($("#memory")) {
+
+  $("#memory").addEventListener("click", () => {
+
+    showModal(`
+      <h2>🧠 What does she remember?</h2>
+      <p>
+        Your selected preferences and notes are saved on this device.
+      </p>
+      <button onclick="clearSavedData()">Delete my saved data</button>
+      <button onclick="closeModal()">Close</button>
+    `);
+
+  });
+
+}
+
+if ($("#premium")) {
+
+  $("#premium").addEventListener("click", () => {
+
+    showModal(`
+      <h2>💎 Premium</h2>
+      <p><b>No advertisements at all.</b></p>
+      <p>
+        Advanced features can be optional.
+        Core help should remain useful without Premium.
+      </p>
+      <button onclick="closeModal()">Close</button>
+    `);
+
+  });
+
+}
+
+if ($("#about")) {
+
+  $("#about").addEventListener("click", () => {
+
+    showModal(`
+      <h2>Your Other Girl 💗</h2>
+      <p>
+        I'm your pocket girl — here to help you talk,
+        study, organise and work through everyday problems.
+      </p>
+      <button onclick="closeModal()">Close</button>
+    `);
+
+  });
+
+}
+
+// =========================
+// SECURITY-SAFE HTML HELPER
+// =========================
 
 function escapeHTML(text) {
-  return String(text).replace(/[&<>"']/g, function (character) {
-    const characters = {
+
+  return String(text).replace(/[&<>"']/g, character => {
+
+    const map = {
       "&": "&amp;",
       "<": "&lt;",
       ">": "&gt;",
@@ -555,12 +610,16 @@ function escapeHTML(text) {
       "'": "&#039;"
     };
 
-    return characters[character];
+    return map[character];
   });
 }
 
-// ---------- START APP ----------
+// =========================
+// START
+// =========================
 
+renderCustomize();
 renderHome();
 renderProfile();
+
 go("welcome");
