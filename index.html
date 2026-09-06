@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ff6fae"><meta name="description" content="Your Other Girl — I'm your pocket girl.">
+<link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css">
+<title>Your Other Girl 💗</title></head>
+<body>
+<div id="app">
+<section id="welcome" class="screen active"><div class="hero">
+<div class="logo">💗</div><h1>Hey girl 💗</h1><p class="tagline">I'm your pocket girl.</p><p>Feel safe with me.<br>Now, what's on your mind?</p>
+<div class="stack"><button class="primary" data-go="chat">💬 Talk to me</button><button data-go="study">📚 I need help studying</button><button data-go="tools">📝 Help me organise my day</button><button data-go="problem">🌸 I have a problem</button></div>
+<button class="link" data-go="customize">🎀 Make Her Yours</button></div></section>
+
+<section id="customize" class="screen"><header><button data-go="welcome">←</button><h2>Make Her Yours 🎀</h2></header><main class="scroll">
+<p>Pick one, a few, or all — she's your girl, so make her your vibe. 💗</p><div id="vibes" class="grid"></div>
+<h3>How should she talk?</h3><div id="styles" class="chips"></div><h3>Emoji level</h3><div id="emoji" class="chips"></div>
+<label>Name (optional)<input id="girlName" placeholder="Luna, Mia, Nova..."></label>
+<label>Custom personality (optional)<textarea id="custom" placeholder="funny, protective, calm when I'm stressed..."></textarea></label>
+<button class="primary wide" id="saveProfile">Save my girl 💗</button></main></section>
+
+<section id="home" class="screen"><header class="appbar"><div><small>Your Other Girl</small><h2 id="greeting"></h2></div><button data-go="profile">👤</button></header><main class="scroll">
+<div class="card"><h3>🌸 How are you feeling today?</h3><div id="moods" class="moods"></div><p id="mood"></p></div>
+<h3>Quick Help</h3><div class="grid"><button data-go="chat">💬<span>Talk to me</span></button><button data-go="study">📚<span>Study</span></button><button data-go="tools">📝<span>Organise my day</span></button><button data-go="problem">🌸<span>I have a problem</span></button></div>
+<div class="card"><h3>✨ Your Day</h3><div id="plans"></div><button id="addPlan" class="small">+ Add a plan</button></div>
+<div class="card"><h3>💗 Your pocket girl says…</h3><p>One step at a time still counts.</p></div></main><nav id="nav"></nav></section>
+
+<section id="chat" class="screen"><header><button data-go="home">←</button><h2>Your Other Girl 💗</h2></header><main class="chat">
+<div class="card"><b>I'm here, girl.</b><p>Tell me what's on your mind. I'll listen before jumping into advice.</p></div>
+<div class="starters"><button data-starter="I need advice">🫶 I need advice</button><button data-starter="I need to vent">💭 I need to vent</button><button data-starter="Help me make a plan">📝 Help me make a plan</button></div>
+<div id="messages" class="messages"></div><div class="composer"><input id="message" placeholder="Tell me what's on your mind..."><button id="send">➤</button></div></main></section>
+
+<section id="study" class="screen"><header><button data-go="home">←</button><h2>Study 📚</h2></header><main class="scroll">
+<p>Tell me what you're studying and I'll help you understand it step by step.</p><div class="grid">
+<button data-study="Explain something">📖<span>Explain something</span></button><button data-study="Homework">📝<span>Homework</span></button><button data-study="Quiz">🧠<span>Quiz me</span></button><button data-study="Study plan">📅<span>Study plan</span></button><button data-study="Assignments">📋<span>Assignments</span></button><button data-study="Practice">✍️<span>Practise</span></button></div>
+<div class="chips" id="modes"></div><div id="studyBox" class="card hidden"></div></main></section>
+
+<section id="tools" class="screen"><header><button data-go="home">←</button><h2>Tools ✨</h2></header><main class="scroll"><div class="grid">
+<button data-tool="journal">📔<span>Journal</span></button><button data-tool="todo">📝<span>To-do list</span></button><button data-tool="planner">📅<span>Planner</span></button><button data-tool="goals">🎯<span>Goals</span></button><button data-tool="routine">⏰<span>Routines</span></button><button data-tool="brain">💡<span>Brain dump</span></button></div><div id="toolBox" class="card hidden"></div></main></section>
+
+<section id="problem" class="screen"><header><button data-go="home">←</button><h2>I'm listening 🌸</h2></header><main class="scroll">
+<div class="card"><h3>Okay girl, I'm listening.</h3><p>You don't have to explain everything perfectly. Just tell me what happened. 💗</p></div>
+<div class="grid"><button data-problem="Friend problems">👯‍♀️<span>Friend problems</span></button><button data-problem="Family problems">🏠<span>Family problems</span></button><button data-problem="School problems">📚<span>School problems</span></button><button data-problem="Confused feelings">💭<span>Confused feelings</span></button><button data-problem="Angry">😤<span>I'm angry</span></button><button data-problem="Bad day">😔<span>Bad day</span></button></div><button class="wide" data-go="chat">✨ Something else</button><div id="problemBox"></div></main></section>
+
+<section id="profile" class="screen"><header><button data-go="home">←</button><h2>Me 👤</h2></header><main class="scroll">
+<div class="profile card"><div>💗</div><h2 id="profileName">Your Other Girl</h2><p id="profileVibe">Your pocket girl is here.</p></div>
+<button class="list" data-go="customize">🎀 My Girl</button><button class="list" id="privacy">🔒 Private Girl Mode</button><button class="list" id="memory">🧠 What does she remember?</button><button class="list" id="premium">💎 Premium</button><button class="list" id="about">ℹ️ About</button></main></section>
+<div id="modal" class="modal hidden"></div>
+</div><script src="app.js"></script></body></html>
