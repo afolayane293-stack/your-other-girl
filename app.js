@@ -1,4 +1,4 @@
-const S=JSON.parse(localStorage.getItem('yog_state')||'{}');
+alert("JavaScript started 💗");const S=JSON.parse(localStorage.getItem('yog_state')||'{}');
 const save=()=>localStorage.setItem('yog_state',JSON.stringify(S));
 const vibes=['🎀 Girly Girl','🖤 Goth','🧸 Soft & Cozy','💅 Confident & Sassy','😂 Funny & Chaotic','📚 Smart & Focused','🌿 Calm & Peaceful','🪩 Energetic & Bubbly','🌙 Quiet & Mysterious','✨ Custom'];
 const styles=['💗 Sweet & gentle','🎯 Straightforward','😂 Funny','🌟 Motivational','😌 Chill','💅 A little sassy','✨ Mix it up'];
