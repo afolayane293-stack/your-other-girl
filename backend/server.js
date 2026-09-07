@@ -3,15 +3,18 @@ const http = require("http");
 const PORT = process.env.PORT || 8787;
 
 const server = http.createServer((req, res) => {
+  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
 
+  // Browser preflight
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     return res.end();
   }
 
+  // Chat endpoint
   if (req.method === "POST" && req.url === "/api/chat") {
     let body = "";
 
@@ -29,32 +32,62 @@ const server = http.createServer((req, res) => {
           "Content-Type": "application/json"
         });
 
-        return res.end(JSON.stringify({
-          error: "Invalid JSON"
-        }));
+        return res.end(
+          JSON.stringify({
+            error: "Invalid JSON"
+          })
+        );
       }
 
-      console.log("Message received:", data.message);
+      const message = String(data.message || "").trim();
+      const profile = data.profile || {};
+
+      console.log("Message received:", message);
+      console.log("Girl profile:", profile);
+
+      /*
+        For now, we are NOT calling an AI API.
+        This lets us safely build the personality system first.
+      */
+
+      let reply = "I'm here, girl 💗 Tell me what's on your mind.";
+
+      if (!message) {
+        reply = "I'm listening 💗";
+      }
+
+      if (message.toLowerCase().includes("hello")) {
+        reply = "Heyyy girl 💗 I'm here. What's going on?";
+      }
+
+      if (message.toLowerCase().includes("study")) {
+        reply = "Absolutely 📚💗 Tell me what you're studying and we'll work through it together.";
+      }
 
       res.writeHead(200, {
         "Content-Type": "application/json"
       });
 
-      res.end(JSON.stringify({
-        reply: "Your Other Girl's AI brain is connected! 💗"
-      }));
+      res.end(
+        JSON.stringify({
+          reply
+        })
+      );
     });
 
     return;
   }
 
+  // Everything else
   res.writeHead(404, {
     "Content-Type": "application/json"
   });
 
-  res.end(JSON.stringify({
-    error: "Not found"
-  }));
+  res.end(
+    JSON.stringify({
+      error: "Not found"
+    })
+  );
 });
 
 server.listen(PORT, () => {
