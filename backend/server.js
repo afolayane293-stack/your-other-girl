@@ -1,11 +1,6 @@
 const http = require("http");
-const OpenAI = require("openai");
 
 const PORT = process.env.PORT || 8787;
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
 
 function makePersonality(profile) {
   const vibes = Array.isArray(profile.vibes)
@@ -25,61 +20,111 @@ function makePersonality(profile) {
   };
 }
 
-function makeInstructions(profile) {
-  const personality = makePersonality(profile);
+function createReply(message, profile) {
+  const text = message.toLowerCase().trim();
+  const personality = makePersonality(profile || {});
+  const name = personality.name;
 
-  return `
-You are Your Other Girl, a friendly AI assistant designed to help with everyday conversations, studying, planning, and problems.
+  if (
+    text === "hello" ||
+    text === "hi" ||
+    text === "hey" ||
+    text === "heyy" ||
+    text === "hey girl"
+  ) {
+    return `Heyyy ${name}! 💗 I'm here. What's on your mind?`;
+  }
 
-The user's chosen personality settings are:
+  if (
+    text.includes("how are you") ||
+    text.includes("how r you") ||
+    text.includes("how are u")
+  ) {
+    return `I'm here, girl 💗 Tell me more. I want to understand what's going on.`;
+  }
 
-Name: ${personality.name}
-Vibes: ${personality.vibes || "not specified"}
-Talking style: ${personality.style || "not specified"}
-Emoji level: ${personality.emoji || "not specified"}
-Custom personality: ${personality.custom || "not specified"}
+  if (
+    text.includes("need advice") ||
+    text.includes("give me advice") ||
+    text.includes("i need help")
+  ) {
+    return `Okay girl, I'm listening. 💗 Tell me what happened, and we'll think through your options together.`;
+  }
 
-Use these preferences to shape your tone naturally.
+  if (
+    text.includes("need to vent") ||
+    text.includes("i want to vent") ||
+    text.includes("let me vent") ||
+    text.includes("vent")
+  ) {
+    return `Of course. 💗 You can get it all out. I'm listening, and I won't rush you.`;
+  }
 
-Be warm, supportive, clear, and honest.
-Do not pretend to be a human.
-Do not claim to have feelings or experiences you do not have.
-When helping with schoolwork, explain things clearly and step by step.
-When the user asks for advice, help them think through their options rather than making every decision for them.
-Keep responses appropriate for a teenage user.
+  if (
+    text.includes("make a plan") ||
+    text.includes("help me plan") ||
+    text.includes("plan for")
+  ) {
+    return `Absolutely 💗 Tell me what you're trying to accomplish, and we'll break it into simple steps.`;
+  }
 
-If the user chooses "Straightforward", be direct and avoid unnecessary fluff.
-If the user chooses "Funny", you can use light humor when appropriate.
-If the user chooses "Sweet & gentle", use a softer supportive tone.
-If the user chooses "Motivational", encourage the user without making unrealistic promises.
+  if (
+    text.includes("sad") ||
+    text.includes("upset") ||
+    text.includes("stressed") ||
+    text.includes("overwhelmed")
+  ) {
+    return `I'm sorry you're feeling this way, ${name}. 💗 Tell me what's been going on, and we can take it one step at a time.`;
+  }
 
-Respect the selected emoji preference.
-`;
+  if (
+    text.includes("happy") ||
+    text.includes("excited") ||
+    text.includes("good news")
+  ) {
+    return `Awww, I love that for you! 💗 Tell me what happened!`;
+  }
+
+  if (text === "ok" || text === "okay" || text === "k") {
+    return `Okayyy 💗 I'm still here if you want to talk.`;
+  }
+
+  return `I'm listening, ${name}. 💗 Tell me a little more about that, and I'll help however I can.`;
 }
 
-async function createReply(message, profile) {
-  const instructions = makeInstructions(profile);
-
-  const response = await client.responses.create({
-    model: "gpt-5.4-mini",
-    instructions,
-    input: message
+function sendJSON(res, statusCode, data) {
+  res.writeHead(statusCode, {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
   });
 
-  return response.output_text ||
-    "I'm here, girl 💗 I couldn't generate a reply right now.";
+  res.end(JSON.stringify(data));
 }
 
 const server = http.createServer((req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-
+  // CORS preflight
   if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    return res.end();
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    });
+
+    res.end();
+    return;
   }
 
+  // Health check
+  if (req.method === "GET" && req.url === "/") {
+    sendJSON(res, 200, {
+      status: "Your Other Girl backend is running 💗"
+    });
+    return;
+  }
+
+  // Chat endpoint
   if (req.method === "POST" && req.url === "/api/chat") {
     let body = "";
 
@@ -87,75 +132,46 @@ const server = http.createServer((req, res) => {
       body += chunk;
     });
 
-    req.on("end", async () => {
-      let data = {};
-
+    req.on("end", () => {
       try {
-        data = JSON.parse(body);
-      } catch {
-        res.writeHead(400, {
-          "Content-Type": "application/json"
-        });
+        const data = JSON.parse(body);
 
-        return res.end(JSON.stringify({
-          error: "Invalid JSON"
-        }));
-      }
+        const message =
+          typeof data.message === "string"
+            ? data.message.trim()
+            : "";
 
-      const message = String(data.message || "").trim();
-      const profile = data.profile || {};
+        const profile = data.profile || {};
 
-      if (!message) {
-        res.writeHead(400, {
-          "Content-Type": "application/json"
-        });
+        if (!message) {
+          sendJSON(res, 400, {
+            error: "Please enter a message."
+          });
+          return;
+        }
 
-        return res.end(JSON.stringify({
-          error: "Message is required"
-        }));
-      }
+        const reply = createReply(message, profile);
 
-      console.log("Message received:", message);
-      console.log("Girl profile:", profile);
-
-      try {
-        const reply = await createReply(message, profile);
-
-        res.writeHead(200, {
-          "Content-Type": "application/json"
-        });
-
-        return res.end(JSON.stringify({
+        sendJSON(res, 200, {
           reply
-        }));
-
-      } catch (error) {
-        console.error("OpenAI error:", error);
-
-        res.writeHead(500, {
-          "Content-Type": "application/json"
         });
+      } catch (error) {
+        console.error("Request error:", error);
 
-        return res.end(JSON.stringify({
-          error: "AI request failed"
-        }));
+        sendJSON(res, 400, {
+          error: "Invalid request."
+        });
       }
     });
 
     return;
   }
 
-  res.writeHead(404, {
-    "Content-Type": "application/json"
+  sendJSON(res, 404, {
+    error: "Not found."
   });
-
-  res.end(JSON.stringify({
-    error: "Not found"
-  }));
 });
 
 server.listen(PORT, () => {
-  console.log(
-    `Your Other Girl backend running on port ${PORT}`
-  );
+  console.log(`Your Other Girl backend running on port ${PORT}`);
 });
