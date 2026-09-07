@@ -1,6 +1,11 @@
 const http = require("http");
+const OpenAI = require("openai");
 
 const PORT = process.env.PORT || 8787;
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 function makePersonality(profile) {
   const vibes = Array.isArray(profile.vibes)
@@ -20,54 +25,49 @@ function makePersonality(profile) {
   };
 }
 
-function createReply(message, profile) {
+function makeInstructions(profile) {
   const personality = makePersonality(profile);
-  const text = message.toLowerCase();
 
-  let reply;
+  return `
+You are Your Other Girl, a friendly AI assistant designed to help with everyday conversations, studying, planning, and problems.
 
-  if (!message) {
-    reply = "I'm listening, girl 💗";
-  } else if (text.includes("hello") || text.includes("hi")) {
-    reply = `Heyyy ${personality.name}! 💗 I'm here. What's on your mind?`;
-  } else if (
-    text.includes("study") ||
-    text.includes("homework") ||
-    text.includes("exam")
-  ) {
-    reply =
-      "Absolutely 📚💗 Tell me the subject and topic, and we'll work through it step by step.";
-  } else if (
-    text.includes("sad") ||
-    text.includes("upset") ||
-    text.includes("bad day")
-  ) {
-    reply =
-      "Aww, I'm here with you 💗 You don't have to explain everything perfectly. Tell me what happened.";
-  } else if (
-    text.includes("advice") ||
-    text.includes("problem")
-  ) {
-    reply =
-      "Okay girl, I'm listening. 💗 Tell me what happened, and we'll think through your options together.";
-  } else {
-    reply =
-      "I'm here, girl 💗 Tell me more. I want to understand what's going on.";
-  }
+The user's chosen personality settings are:
 
-  // Small personality adjustments
-  if (personality.style.includes("Straightforward")) {
-    reply = reply.replace("Aww, ", "");
-  }
+Name: ${personality.name}
+Vibes: ${personality.vibes || "not specified"}
+Talking style: ${personality.style || "not specified"}
+Emoji level: ${personality.emoji || "not specified"}
+Custom personality: ${personality.custom || "not specified"}
 
-  if (
-    personality.emoji === "None" ||
-    personality.emoji === "None "
-  ) {
-    reply = reply.replace(/[💗✨😭📚💡🎀🌸🫶😂😌]/g, "");
-  }
+Use these preferences to shape your tone naturally.
 
-  return reply.trim();
+Be warm, supportive, clear, and honest.
+Do not pretend to be a human.
+Do not claim to have feelings or experiences you do not have.
+When helping with schoolwork, explain things clearly and step by step.
+When the user asks for advice, help them think through their options rather than making every decision for them.
+Keep responses appropriate for a teenage user.
+
+If the user chooses "Straightforward", be direct and avoid unnecessary fluff.
+If the user chooses "Funny", you can use light humor when appropriate.
+If the user chooses "Sweet & gentle", use a softer supportive tone.
+If the user chooses "Motivational", encourage the user without making unrealistic promises.
+
+Respect the selected emoji preference.
+`;
+}
+
+async function createReply(message, profile) {
+  const instructions = makeInstructions(profile);
+
+  const response = await client.responses.create({
+    model: "gpt-5.4-mini",
+    instructions,
+    input: message
+  });
+
+  return response.output_text ||
+    "I'm here, girl 💗 I couldn't generate a reply right now.";
 }
 
 const server = http.createServer((req, res) => {
@@ -87,7 +87,7 @@ const server = http.createServer((req, res) => {
       body += chunk;
     });
 
-    req.on("end", () => {
+    req.on("end", async () => {
       let data = {};
 
       try {
@@ -97,30 +97,49 @@ const server = http.createServer((req, res) => {
           "Content-Type": "application/json"
         });
 
-        return res.end(
-          JSON.stringify({
-            error: "Invalid JSON"
-          })
-        );
+        return res.end(JSON.stringify({
+          error: "Invalid JSON"
+        }));
       }
 
       const message = String(data.message || "").trim();
       const profile = data.profile || {};
 
+      if (!message) {
+        res.writeHead(400, {
+          "Content-Type": "application/json"
+        });
+
+        return res.end(JSON.stringify({
+          error: "Message is required"
+        }));
+      }
+
       console.log("Message received:", message);
       console.log("Girl profile:", profile);
 
-      const reply = createReply(message, profile);
+      try {
+        const reply = await createReply(message, profile);
 
-      res.writeHead(200, {
-        "Content-Type": "application/json"
-      });
+        res.writeHead(200, {
+          "Content-Type": "application/json"
+        });
 
-      res.end(
-        JSON.stringify({
+        return res.end(JSON.stringify({
           reply
-        })
-      );
+        }));
+
+      } catch (error) {
+        console.error("OpenAI error:", error);
+
+        res.writeHead(500, {
+          "Content-Type": "application/json"
+        });
+
+        return res.end(JSON.stringify({
+          error: "AI request failed"
+        }));
+      }
     });
 
     return;
@@ -130,11 +149,9 @@ const server = http.createServer((req, res) => {
     "Content-Type": "application/json"
   });
 
-  res.end(
-    JSON.stringify({
-      error: "Not found"
-    })
-  );
+  res.end(JSON.stringify({
+    error: "Not found"
+  }));
 });
 
 server.listen(PORT, () => {
