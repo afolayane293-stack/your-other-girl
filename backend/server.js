@@ -372,4 +372,75 @@ function sendJSON(res, statusCode, data) {
     "Access-Control-Allow-Headers": "Content-Type"
   });
 
-  res.end(JSON
+  res.end(JSON.stringify(data));
+}
+
+const server = http.createServer((req, res) => {
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    });
+
+    res.end();
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/") {
+    sendJSON(res, 200, {
+      status: "Your Other Girl backend is running 💗"
+    });
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/api/chat") {
+    let body = "";
+
+    req.on("data", chunk => {
+      body += chunk;
+    });
+
+    req.on("end", () => {
+      try {
+        const data = JSON.parse(body);
+
+        const message =
+          typeof data.message === "string"
+            ? data.message.trim()
+            : "";
+
+        const profile = data.profile || {};
+
+        if (!message) {
+          sendJSON(res, 400, {
+            error: "Please enter a message."
+          });
+          return;
+        }
+
+        const reply = createReply(message, profile);
+
+        sendJSON(res, 200, {
+          reply
+        });
+      } catch (error) {
+        console.error("Request error:", error);
+
+        sendJSON(res, 400, {
+          error: "Invalid request."
+        });
+      }
+    });
+
+    return;
+  }
+
+  sendJSON(res, 404, {
+    error: "Not found."
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`Your Other Girl backend running on port ${PORT}`);
+});
